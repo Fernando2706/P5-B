@@ -9,67 +9,95 @@ export const resolvers = {
     id: (user: User) => user._id!.toString(),
     posts: async (user: User) => {
         const mongoService = new MongoService();
-        return await mongoService.findByFilter<Post>("posts", {author: user._id}); 
+        const post = await mongoService.findByFilter<Post>("posts", {author: user._id}); 
+        mongoService.destroy();
+        return post;
     },
     comments: async (user: User) => {
         const mongoService = new MongoService();
-        return await mongoService.findByFilter<Comment>("comments", {author: user._id});
+        const comment = await mongoService.findByFilter<Comment>("comments", {author: user._id});
+        mongoService.destroy();
+        return comment; 
     },
     likedPosts: async (user: User) => {
         const mongoService = new MongoService();
-        return await mongoService.findByFilter<Post>("posts", {likes: user._id});
+        const post = await mongoService.findByFilter<Post>("posts", {likes: user._id});
+        mongoService.destroy();
+        return post;
     },
   },
   Post: {
     id: (post: Post) => post._id!.toString(),
     author: async (post: Post) => {
         const mongoService = new MongoService();
-        return await mongoService.findById<User>("users", post.author.toString());
+        const user = await mongoService.findById<User>("users", post.author.toString());
+        mongoService.destroy();
+        return user;
     },
     comments: async (post: Post) => {
         const mongoService = new MongoService();
-        return await mongoService.findByFilter<Comment>("comments", {post: post._id});
+        const comment = await mongoService.findByFilter<Comment>("comments", {post: post._id});
+        mongoService.destroy();
+        return comment;
     },
     likes: async (post: Post) => {
         const mongoService = new MongoService();
-        return await mongoService.findByFilter<User>("users", {_id: {$in: post.likes}});
+        const user = await mongoService.findByFilter<User>("users", {_id: {$in: post.likes}});
+        mongoService.destroy();
+        return user;
     },
   },
   Comment: {
         id: (comment: Comment) => comment._id!.toString(),
         author: async (comment: Comment) => {
             const mongoService = new MongoService();
-            return await mongoService.findById<User>("users", comment.author.toString());
+            const user = await mongoService.findById<User>("users", comment.author.toString());
+            mongoService.destroy();
+            return user;
         },
         post: async (comment: Comment) => {
             const mongoService = new MongoService();
-            return await mongoService.findById<Post>("posts", comment.post.toString());
+            const post = await mongoService.findById<Post>("posts", comment.post.toString());
+            mongoService.destroy();
+            return post;
         }
   },
   Query: {
     users: async () => {
         const mongoService = new MongoService();
-        return await mongoService.findAll<User>("users");
+        const user = await mongoService.findAll<User>("users");
+        mongoService.destroy();
+        return user;
     },
     user: async (_: unknown, { id }: { id: string }) => {
         const mongoService = new MongoService();
-        return await mongoService.findById<User>("users", id);
+        const user = await mongoService.findById<User>("users", id);
+        mongoService.destroy();
+        return user;
     },
     posts: async () => {
         const mongoService = new MongoService();
-        return await mongoService.findAll<Post>("posts");
+        const post = await mongoService.findAll<Post>("posts");
+        mongoService.destroy();
+        return post;
     },
     post: async (_: unknown, { id }: { id: string }) => {
         const mongoService = new MongoService();
-        return await mongoService.findById<Post>("posts", id);
+        const post = await mongoService.findById<Post>("posts", id);
+        mongoService.destroy();
+        return post;
     },
     comments: async () => {
         const mongoService = new MongoService();
-        return await mongoService.findAll<Comment>("comments");
+        const comment = await mongoService.findAll<Comment>("comments");
+        mongoService.destroy();
+        return comment;
     },
     comment: async (_: unknown, { id }: { id: string }) => {
         const mongoService = new MongoService();
-        return await mongoService.findById<Comment>("comments", id);
+        const comment = await mongoService.findById<Comment>("comments", id);
+        mongoService.destroy();
+        return comment;
     },
   },
    Mutation: {
@@ -87,7 +115,7 @@ export const resolvers = {
             throw new Error("Email format not valid");
         }
 
-        return await mongoService.create<User>("users", {
+        const user = await mongoService.create<User>("users", {
           name: input.name,
           email: input.email,
           posts: [],
@@ -97,6 +125,8 @@ export const resolvers = {
           updatedAt: new Date(),
           password: hashedPassword
         });
+        mongoService.destroy();
+        return user;
     },
     updateUser: async (_: unknown, { id, input }: { id: string, input: UpdateUserInput }) => {
         const mongoService = new MongoService();
@@ -123,6 +153,7 @@ export const resolvers = {
         }
 
         const user = await mongoService.findById<User>("users", id);
+        mongoService.destroy();
         return user;
     },
     deleteUser: async (_: unknown, { id }: { id: string }) => {
@@ -164,7 +195,9 @@ export const resolvers = {
     },
     deletePost: async (_: unknown, { id }: { id: string }) => {
         const mongoService = new MongoService();
-        return await mongoService.deleteById<Post>("posts", id);
+        const result = await mongoService.deleteById<Post>("posts", id);
+        mongoService.destroy();
+        return result;
     },
     addLikeToPost: async (_: unknown, { postId, userId }: { postId: string, userId: string }) => {
         const mongoService = new MongoService();
@@ -201,6 +234,7 @@ export const resolvers = {
         }
 
         const newPost = await mongoService.findById<Post>("posts", postId);
+        mongoService.destroy();
         return newPost;
     },
     removeLikeFromPost: async (_: unknown, { postId, userId }: { postId: string, userId: string }) => {
@@ -237,6 +271,7 @@ export const resolvers = {
         }
 
         const newPost = await mongoService.findById<Post>("posts", postId);
+        mongoService.destroy();
         return newPost;
     },
     createComment: async (_: unknown, { input }: { input: CreateCommentInput }) => {
@@ -253,11 +288,13 @@ export const resolvers = {
             throw new Error("Post not found");
         }
 
-        return await mongoService.create<Comment>("comments", {
+        const comment = await mongoService.create<Comment>("comments", {
             text: input.text,
             author: new ObjectId(input.authorId),
             post: new ObjectId(input.postId),
         });
+        mongoService.destroy();
+        return comment;
     },
     updateComment: async (_: unknown, { id, input }: { id: string, input: UpdateCommentInput }) => {
         const mongoService = new MongoService();
@@ -275,11 +312,14 @@ export const resolvers = {
         }
 
         const comment = await mongoService.findById<Comment>("comments", id);
+        mongoService.destroy();
         return comment; 
     },
     deleteComment: async (_: unknown, { id }: { id: string }) => {
         const mongoService = new MongoService();
-        return await mongoService.deleteById<Comment>("comments", id);
+        const result = await mongoService.deleteById<Comment>("comments", id);
+        mongoService.destroy();
+        return result;
     },
   },
 };

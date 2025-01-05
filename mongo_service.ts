@@ -13,6 +13,10 @@ export default class MongoService {
         this.db = this.client.db(dbName);
     }
 
+    destroy() {
+        this.client.close();
+    }
+
     private getCollection<T>(name: string): Collection<T> {
         return this.db.collection<T>(name);   
     }
